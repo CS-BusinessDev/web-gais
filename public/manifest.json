@@ -1,0 +1,22 @@
+{
+    "name": "SUMO by Business Development",
+    "short_name": "SUMO",
+    "start_url": "https://sumo.completeselular.com/",
+    "id": "https://sumo.completeselular.com/",
+    "background_color": "#ffffff",
+    "description": "",
+    "display": "fullscreen",
+    "theme_color": "#ffffff",
+    "scope": [
+        "https://sumo.completeselular.com/",
+        "http://sumo.completeselular.com/"
+    ],
+    "icons": [
+        {
+            "src": "admin/assets/img/gais-block.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

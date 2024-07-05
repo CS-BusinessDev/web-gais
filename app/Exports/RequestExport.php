@@ -30,6 +30,8 @@ class RequestExport implements FromArray, WithHeadings, WithMapping
 
     public function array(): array
     {
+        // dd($this);
+
         $area_id = $this->area_id;
         $request_type_id = $this->request_type_id;
         $products = Product::where('category_id', $request_type_id)->get();
@@ -144,7 +146,7 @@ class RequestExport implements FromArray, WithHeadings, WithMapping
                         ->get();
                         break;
                     case 5:
-                        $requests = RequestBarang::with('user.division', 'user.division.area','closedby','request_detail.product','request_type')
+                        $requests = RequestBarang::with('user.division', 'user.division.area','closedby', 'request_detail.product', 'request_type')
                         ->where('request_type_id', $request_type_id)
                         ->whereHas('request_detail', function ($query) use ($product) {
                             $query->where('product_id', $product->id);
@@ -182,10 +184,10 @@ class RequestExport implements FromArray, WithHeadings, WithMapping
                 //$request[] //collection 3 request
 
                 foreach ($requests as $request) {
-                    if($request->user->division->area->id == 4 || $request->user->division->area->id == 5 || $request->user->division->area->id == 6 || $request->user->division->area->id == 11) {
+                    if($request->user->division->area->id == 4 || $request->user->division->area->id == 5 || $request->user->division->area->id == 6 || $request->user->division->area->id == 11 || $request->user->division->area->id == 14) {
                         foreach ($request->request_detail as $reqdetail) {
                             if ($reqdetail->product_id == $product->id) {
-                                $total += $reqdetail->qty_approved;
+                                $total += $reqdetail->qty_approved ?? $reqdetail->qty_request;
                             }
                         }
                     } else {

@@ -149,7 +149,9 @@ Route::group(['middleware' => ['auth', 'checkRole:1,3']], function(){
     Route::post('/division/create', [DivisionController::class, 'create']);
     Route::get('/division/{division}/edit', [DivisionController::class, 'edit']);
     Route::post('/division/{division}/update', [DivisionController::class, 'update']);
+    // Route::get('/division/{division}/delete', [DivisionController::class, 'destroy']);
     Route::get('/division/{division}/delete', [DivisionController::class, 'destroy']);
+    Route::get('/division/{division}/active', [DivisionController::class, 'active']);
 
     #ROLE
     Route::get('role', [RoleController::class, 'index']);

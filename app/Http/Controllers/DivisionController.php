@@ -17,7 +17,7 @@ class DivisionController extends Controller
     public function index()
     {
         return view('settings.division.index', [
-            'divisions' =>  Divisi::with('area')->orderBy('division')->get(),
+            'divisions' =>  Divisi::with('area')->orderBy('division')->withTrashed()->get(),
             'areas' => Area::all(),
         ]);
     }
@@ -103,9 +103,17 @@ class DivisionController extends Controller
         try {
             $division->delete($division);
 
-            return redirect('division')->with('success', 'Data berhasil dihapus !');
+            return redirect('division')->with('success', 'Data berhasil dinonaktifkan !');
         } catch (Exception $e) {
             return redirect('division')->with(['error' => $e->getMessage()]);
         }
+    }
+
+    public function active(Request $request, $id)
+    {
+        $division = Divisi::onlyTrashed()->find($id);
+        $division->deleted_at = null;
+        $division->save();
+        return redirect('division')->with(['success' => "Berhasil mengatifkan kembali division " . $division->division]);
     }
 }

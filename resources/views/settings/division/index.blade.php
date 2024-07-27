@@ -44,7 +44,13 @@
                                     <td>
                                         <a href="/division/{{$division->id}}/edit" class="btn btn-warning btn-sm"><span class="lnr lnr-pencil"></span></a>
                                         <!-- BUTTON DELETE -->
-                                        <!-- <a href="/division/{{$division->id}}/delete" class="btn btn-danger btn-sm" onclick="return confirm('Yakin akan menghapus data ?')">Hapus</a> -->
+                                        @if ($division->deleted_at)
+                                            <a href="/division/{{ $division->id }}/active" class="btn btn-danger btn-xs"
+                                                onclick="return confirm('Mengaktifkan kembali division {{ $division->division }}?')"><span class="lnr lnr-cross-circle"></span></a>
+                                        @else
+                                            <a href="/division/{{$division->id}}/delete" class="btn btn-success btn-xs"
+                                                onclick="return confirm('Apalah anda yakin menonaktifkan division {{ $division->division }}?')"><span class="lnr lnr-checkmark-circle"></span></a>
+                                        @endif
                                     </td>
                                 </tr>
                                 @endforeach

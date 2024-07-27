@@ -30,18 +30,17 @@ class RequestExport implements FromArray, WithHeadings, WithMapping
 
     public function array(): array
     {
-        // dd($this);
-
         $area_id = $this->area_id;
         $request_type_id = $this->request_type_id;
         $products = Product::where('category_id', $request_type_id)->get();
-        $divisions = Divisi::orderBy('division')->where('area_id', $area_id)->get();
+        $divisions = Divisi::orderBy('division')
+            ->where('area_id', $area_id)
+            ->whereNull('deleted_at') // Filter divisi yang tidak dihapus
+            ->get();
         $result = [];
         $totalPrice = 0;
         $totalItemsAllProducts = 0;
         $filter_request = $this->filter_request;
-        //$result[[kertas,10.000,$qty[]],[],[]]
-        //#result[[kertas,10.000,$qty[3,2,6,...]],[pulpen,8.000,[5,3,4]].............]
 
         foreach ($products as $product) {
             $qty = [];
@@ -49,157 +48,62 @@ class RequestExport implements FromArray, WithHeadings, WithMapping
             $totalPricePerDivision = [];
             $totalProductPerProduct = [];
             $totalItemsPerDivision = [];
-            //posisi divisi busdev [3]
-            //posisi divisi scm [3,2]
-            //posisi divisi fam [3,2,6...........]
-            
+
             foreach ($divisions as $division) {
                 $total = 0;
 
+                $requestsQuery = RequestBarang::with(['user' => function($query) {
+                        $query->whereNull('deleted_at');
+                    }, 'user.division' => function($query) {
+                        $query->whereNull('deleted_at');
+                    }, 'user.division.area', 'closedby', 'request_detail.product', 'request_type', 'request_approval'])
+                    ->where('request_type_id', $request_type_id)
+                    ->whereHas('user', function ($query) use ($division, $area_id) {
+                        $query->where('division_id', $division->id)
+                              ->whereNull('deleted_at')
+                              ->whereHas('division.area', function ($query) use ($area_id) {
+                                  $query->where('area_id', $area_id);
+                              });
+                    })
+                    ->whereBetween('created_at', [$this->date1, $this->date2]);
+
                 switch ($filter_request) {
                     case 0:
-                        $requests = RequestBarang::with('user.division', 'user.division.area','closedby','request_detail.product','request_type', 'request_approval')
-                        ->whereHas('request_approval', function ($q) {
+                        $requestsQuery->whereHas('request_approval', function ($q) {
                             $q->where('approval_type', 'EXECUTOR')
-                            ->where('approved_by', null);
-                        })
-                        ->where('request_type_id', $request_type_id)
-                        ->whereHas('request_detail', function ($query) use ($product) {
-                            $query->where('product_id', $product->id);
-                        })
-                        ->whereHas('user', function ($query) use ($division) {
-                            $query->where('division_id', $division->id);
-                        })
-                        ->whereHas('user.division.area', function ($query) use ($area_id) {
-                            $query->whereIn('area_id', [$area_id]);
-                        })
-                        ->whereBetween('created_at',[$this->date1,$this->date2])
-                        ->get();
+                              ->where('approved_by', null);
+                        });
                         break;
                     case 1:
-                        $requests = RequestBarang::with('user.division', 'user.division.area','closedby','request_detail.product','request_type', 'request_approval')
-                        ->whereHas('request_approval', function ($q) {
+                        $requestsQuery->whereHas('request_approval', function ($q) {
                             $q->where('approval_type', 'EXECUTOR')
-                            ->where('approved_by', '!=', null);
-                        })
-                        ->where('request_type_id', $request_type_id)
-                        ->whereHas('request_detail', function ($query) use ($product) {
-                            $query->where('product_id', $product->id);
-                        })
-                        ->whereHas('user', function ($query) use ($division) {
-                            $query->where('division_id', $division->id);
-                        })
-                        ->whereHas('user.division.area', function ($query) use ($area_id) {
-                            $query->whereIn('area_id', [$area_id]);
-                        })
-                        ->whereBetween('created_at',[$this->date1,$this->date2])
-                        ->get();
-                        break;
-                    case 2:
-                        $requests = RequestBarang::with('user.division', 'user.division.area','closedby','request_detail.product','request_type')
-                        ->where('request_type_id', $request_type_id)
-                        ->whereHas('request_detail', function ($query) use ($product) {
-                            $query->where('product_id', $product->id);
-                            
-                        })
-                        ->whereHas('user', function ($query) use ($division) {
-                            $query->where('division_id', $division->id);
-                        })
-                        ->whereHas('user.division.area', function ($query) use ($area_id) {
-                            $query->whereIn('area_id', [$area_id]);
-                        })
-                        ->whereBetween('created_at',[$this->date1,$this->date2])
-                        ->get();
+                              ->where('approved_by', '!=', null);
+                        });
                         break;
                     case 3:
-                        $requests = RequestBarang::with('user.division', 'user.division.area','closedby','request_detail.product','request_type')
-                        ->where('request_type_id', $request_type_id)
-                        ->whereHas('request_detail', function ($query) use ($product) {
-                            $query->where('product_id', $product->id);
-                            
-                        })
-                        ->whereHas('user', function ($query) use ($division) {
-                            $query->where('division_id', $division->id);
-                        })
-                        ->whereHas('user.division.area', function ($query) use ($area_id) {
-                            $query->whereIn('area_id', [$area_id]);
-                        })
-                        ->where('status_client', '!=', 2)
-                        ->whereBetween('created_at',[$this->date1,$this->date2])
-                        ->get();
+                        $requestsQuery->where('status_client', '!=', 2);
                         break;
                     case 4:
-                        $requests = RequestBarang::with('user.division', 'user.division.area','closedby','request_detail.product','request_type')
-                        ->where('request_type_id', $request_type_id)
-                        ->whereHas('request_detail', function ($query) use ($product) {
-                            $query->where('product_id', $product->id);
-                            
-                        })
-                        ->whereHas('user', function ($query) use ($division) {
-                            $query->where('division_id', $division->id);
-                        })
-                        ->whereHas('user.division.area', function ($query) use ($area_id) {
-                            $query->whereIn('area_id', [$area_id]);
-                        })
-                        ->where('status_client', 2)
-                        ->whereBetween('created_at',[$this->date1,$this->date2])
-                        ->get();
+                        $requestsQuery->where('status_client', 2);
                         break;
                     case 5:
-                        $requests = RequestBarang::with('user.division', 'user.division.area','closedby', 'request_detail.product', 'request_type')
-                        ->where('request_type_id', $request_type_id)
-                        ->whereHas('request_detail', function ($query) use ($product) {
-                            $query->where('product_id', $product->id);
-                            
-                        })
-                        ->whereHas('user', function ($query) use ($division) {
-                            $query->where('division_id', $division->id);
-                        })
-                        ->whereHas('user.division.area', function ($query) use ($area_id) {
-                            $query->whereIn('area_id', [$area_id]);
-                        })
-                        ->where('status_client', 4)
-                        ->whereBetween('created_at',[$this->date1,$this->date2])
-                        ->get();
+                        $requestsQuery->where('status_client', 4);
                         break;
                     default:
-                        $requests = RequestBarang::with('user.division', 'user.division.area','closedby','request_detail.product','request_type')
-                        ->where('request_type_id', $request_type_id)
-                        ->whereHas('request_detail', function ($query) use ($product) {
-                            $query->where('product_id', $product->id);
-                            
-                        })
-                        ->whereHas('user', function ($query) use ($division) {
-                            $query->where('division_id', $division->id);
-                        })
-                        ->whereHas('user.division.area', function ($query) use ($area_id) {
-                            $query->whereIn('area_id', [$area_id]);
-                        })
-                        ->where('status_client', '!=', 2)
-                        ->whereBetween('created_at',[$this->date1,$this->date2])
-                        ->get();
+                        $requestsQuery->where('status_client', '!=', 2);
                         break;
-                    }
+                }
 
-                //$request[] //collection 3 request
+                $requests = $requestsQuery->get();
 
                 foreach ($requests as $request) {
-                    if($request->user->division->area->id == 4 || $request->user->division->area->id == 5 || $request->user->division->area->id == 6 || $request->user->division->area->id == 11 || $request->user->division->area->id == 14) {
-                        foreach ($request->request_detail as $reqdetail) {
-                            if ($reqdetail->product_id == $product->id) {
-                                $total += $reqdetail->qty_approved ?? $reqdetail->qty_request;
-                            }
-                        }
-                    } else {
-                        foreach ($request->request_detail as $reqdetail) {
-                            if ($reqdetail->product_id == $product->id) {
-                                $total += $reqdetail->qty_request;
-                            }
+                    foreach ($request->request_detail as $reqdetail) {
+                        if ($reqdetail->product_id == $product->id) {
+                            $total += $reqdetail->qty_approved ?? $reqdetail->qty_request;
                         }
                     }
                 }
-                $totalPricePerDivision[$division->division] = ($total * $product->price); // Calculate and store the total price for the division
-                //array_push($qty, strval($total));
+                $totalPricePerDivision[$division->division] = ($total * $product->price);
                 $qty[$division->id] = $total;
                 $totalItemsPerDivision[$division->division] = $total;
             }
@@ -207,7 +111,7 @@ class RequestExport implements FromArray, WithHeadings, WithMapping
             $totalPrice += $totalPricePerProduct;
             $totalProductPerProduct = array_sum($qty);
             $totalItemsAllDivisions = array_sum($totalItemsPerDivision);
-            
+
             array_push($result, [
                 'product_name' => $product->product,
                 'unit_type' => $product->unit_type->unit_type,
@@ -215,10 +119,9 @@ class RequestExport implements FromArray, WithHeadings, WithMapping
                 'qty' => $qty,
                 'total_item' => $totalProductPerProduct,
                 'total_price' => $totalPricePerProduct,
-            ]);           
+            ]);
         }
 
-        // Calculate and store the total items for each division
         $divisionTotalItems = [];
         $divisionPriceItems = [];
 
@@ -228,15 +131,14 @@ class RequestExport implements FromArray, WithHeadings, WithMapping
 
             foreach ($result as $product) {
                 if (isset($product['qty'][$division->id])) {
-                $divisionTotal += $product['qty'][$division->id];
-                $divisionPrice += $product['qty'][$division->id] * $product['price'];
+                    $divisionTotal += $product['qty'][$division->id];
+                    $divisionPrice += $product['qty'][$division->id] * $product['price'];
                 }
             }
             $divisionTotalItems[] = $divisionTotal;
             $divisionPriceItems[] = $divisionPrice;
         }
 
-        // Add a new row to the result array with total items for each division
         $divisionTotalRow = [
             'product_name' => 'Total Item per Divisi',
             'unit_type' => '',
@@ -246,7 +148,6 @@ class RequestExport implements FromArray, WithHeadings, WithMapping
             'total_price' => '',
         ];
 
-        // Add a new row to the result array with total price for each division
         $divisionPriceRow = [
             'product_name' => 'Total Biaya per Divisi',
             'unit_type' => '',
@@ -255,7 +156,7 @@ class RequestExport implements FromArray, WithHeadings, WithMapping
             'total_item' => '',
             'total_price' => array_sum($divisionPriceItems),
         ];
-        
+
         array_push($result, $divisionTotalRow, $divisionPriceRow);
 
         return $result;
@@ -266,19 +167,17 @@ class RequestExport implements FromArray, WithHeadings, WithMapping
         $area_id = $this->area_id;
 
         $division = DB::table('divisions')
-        ->where('area_id', $area_id)
-        ->orderBy('division')
-        ->pluck('division')
-        ->toArray();
-        
+            ->where('area_id', $area_id)
+            ->whereNull('deleted_at') // Filter divisi yang tidak dihapus
+            ->orderBy('division')
+            ->pluck('division')
+            ->toArray();
+
         $headings = ['Barang', 'Tipe Unit', 'Harga'];
         $endHeadings = ['Total Item', 'Total Biaya'];
         $headings = array_merge($headings, $division, $endHeadings);
 
         return $headings;
-
-        // Behavior Maatwebsite -> kesamping
-        // [barang , harga , division all -> ...]
     }
 
     public function map($row): array

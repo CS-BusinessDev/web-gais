@@ -56,28 +56,27 @@
 								</thead>
 								<tbody>
                                 @foreach ($users as $user)
-                                <tr>
-                                    <td>{{ $loop->iteration }}</td>
-                                    <!-- Kalau mau tampilin halaman profile kasih : <a href="/user/{{$user->id}}/profile"> -->
-                                    <td><a href="#">{{ $user->fullname }}</a></td>
-                                    <td><a href="#">{{ $user->username }}</a></td>
-                                    <td>{{ $user->division->area->area }}</td>
-                                    <td>{{ $user->badan_usaha->badan_usaha }}</td>
-                                    <td>{{ $user->division->division }}</td>
-                                    <td>{{ $user->role->role }}</td>
-                                    <td>{{ $user->approval->fullname }}</td>
-                                    <td class="text-center">
-                                        <a href="/user/{{$user->id}}/edit" class="btn btn-warning btn-xs"><span class="lnr lnr-pencil"></span></a>
-                                        @if ($user->deleted_at)
-                                            <a href="/user/{{ $user->id }}/active" class="btn btn-danger btn-xs"
-                                                onclick="return confirm('Mengaktifkan kembali user {{ $user->fullname }}?')"><span class="lnr lnr-cross-circle"></span></a>
-                                        @else
-                                            <a href="/user/{{$user->id}}/delete" class="btn btn-success btn-xs"
-                                                onclick="return confirm('Apalah anda yakin menonaktifkan user {{ $user->fullname }}?')"><span class="lnr lnr-checkmark-circle"></span></a>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td><a href="#">{{ $user->fullname }}</a></td>
+                                        <td><a href="#">{{ $user->username }}</a></td>
+                                        <td>{{ optional(optional($user->division)->area)->area ?? 'N/A' }}</td>
+                                        <td>{{ $user->badan_usaha->badan_usaha ?? 'N/A' }}</td>
+                                        <td>{{ $user->division->division ?? 'N/A' }}</td>
+                                        <td>{{ $user->role->role ?? 'N/A' }}</td>
+                                        <td>{{ $user->approval->fullname ?? 'N/A' }}</td>
+                                        <td class="text-center">
+                                            <a href="/user/{{$user->id}}/edit" class="btn btn-warning btn-xs"><span class="lnr lnr-pencil"></span></a>
+                                            @if ($user->deleted_at)
+                                                <a href="/user/{{ $user->id }}/active" class="btn btn-danger btn-xs"
+                                                    onclick="return confirm('Mengaktifkan kembali user {{ $user->fullname }}?')"><span class="lnr lnr-cross-circle"></span></a>
+                                            @else
+                                                <a href="/user/{{$user->id}}/delete" class="btn btn-success btn-xs"
+                                                    onclick="return confirm('Apalah anda yakin menonaktifkan user {{ $user->fullname }}?')"><span class="lnr lnr-checkmark-circle"></span></a>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
 								</tbody>
 							</table>
                             <div style="float:right">
